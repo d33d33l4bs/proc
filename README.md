@@ -1,6 +1,7 @@
 # Introduction
 
 Proctoolbox is a simple library I made to serve my own purposes.
+It allows me to play with processes: inject data, read memory, etc.
 
 
 # Warnings
