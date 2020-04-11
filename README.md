@@ -242,3 +242,12 @@ with process.write_mem_words_and_restore(0x0011223344556677, PAYLOAD):
 ```
 
 A similar context manager is written for `write_mem_array`: `write_mem_array_and_restore`.
+
+
+# TODO
+
+* Make the `process.call` higher level. For the moment, the method take a function address.
+This one could take the name or the address of the function.
+* Make the `process.syscall` and `process.call` higher level. If one of the paramater is a string or a struct, these methods could allocate a new mapping and write them inside.
+For example: `process.call(printf_addr, 'Hello "%s"', 'Kami the evil guy')`.
+
