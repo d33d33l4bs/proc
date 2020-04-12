@@ -1,20 +1,21 @@
 # Introduction
 
-Proctoolbox is a simple library I made to serve my own purposes.
-It allows me to play with processes: inject data, read memory, etc.
+`proc` is a simple library allowing to play with processes: inject data, read memory, etc.
+I made it to serve my own purposes.
 
 
 # Warnings
 
-You can use this one but remember that its primary goal is to store some pieces of code I wrote for my projects.
+You can use this one but remember that its primary goal is to store some ugly pieces of code I wrote for my projects.
 Therefore don't expect to see a beautiful code or a pretty architecture.
 
 
 # Install
 
 ```bash
-git clone https://github.com/d33d33l4bs/proctoolbox.git
-cd proctoolbox
+git clone https://github.com/d33d33l4bs/proc.git
+cd proc
+# or pip install .
 python setup.py install
 ```
 
@@ -24,7 +25,7 @@ python setup.py install
 ## Attach/Detach/Continue/Singlestep a process
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 
@@ -44,7 +45,7 @@ process.detach()
 ## Read the process registers
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -54,7 +55,7 @@ regs = process.get_regs()
 ## Write the process registers
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -67,7 +68,7 @@ process.set_regs(regs)
 ## Make an auto registers restore
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -85,7 +86,7 @@ with process.get_regs_and_restore() as regs:
 Without a `Process` instance:
 
 ```python
-from deedee.proctoolbox.maps import get_maps
+from deedee.proc.maps import get_maps
 
 get_maps(1234)
 ```
@@ -93,7 +94,7 @@ get_maps(1234)
 With a `Process` instance:
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.get_maps()
@@ -102,7 +103,7 @@ process.get_maps()
 ## Get all the writable mappings of a process with a size greater or equal to 4096
 
 ```python
-from deedee.proctoolbox.maps import get_maps
+from deedee.proc.maps import get_maps
 
 get_maps(1234, lambda m: 'w' in m.perms and m.size >= 4096)
 ```
@@ -110,7 +111,7 @@ get_maps(1234, lambda m: 'w' in m.perms and m.size >= 4096)
 ## Get a symbol address into another process memory (support ASLR)
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -120,7 +121,7 @@ printf_addr = process.get_sym_addr('/usr/lib64/libc-2.30.so', 'printf')
 ## Make a process call a function
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -131,7 +132,7 @@ process.call(exit_addr, 0)
 ## Make a process call a syscall
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 NR_exit = 60
 
@@ -143,7 +144,7 @@ process.syscall(NR_exit, 0)
 ## Allocate a new mapping into a process
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 NR_MMAP = 9
 
@@ -169,7 +170,7 @@ mapping = target.syscall(NR_MMAP, 0, SIZE, prot, flags, 0, 0)
 **Method #1:**
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -181,7 +182,7 @@ words = process.read_mem_words(0x0011223344556677, n=5)
 **Method #2:**
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -195,7 +196,7 @@ words = process.read_mem_array(0x0011223344556677, n=5)
 **Method #1:**
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 PAYLOAD = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
 
@@ -212,7 +213,7 @@ non writable mapping.
 **Method #2:**
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 process = Process(pid)
 process.attach()
@@ -228,7 +229,7 @@ This method can only write on writable mapping.
 A context manager allow to undo mem modifications:
 
 ```python
-from deedee.proctoolbox.process import Process
+from deedee.proc.process import Process
 
 PAYLOAD = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
 
