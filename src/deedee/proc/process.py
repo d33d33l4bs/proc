@@ -317,32 +317,42 @@ class Process:
         RuntimeError
             No executable mapping is found into the library.
         '''
-        # step 0: load the lib into the local process
+        # load the lib into the local process
         self_pid = os.getpid()
         lib      = ctypes.CDLL(lib_path)
         filter_  = lambda m: m.pathname == lib_path and 'w' in m.perms
-        # step 1: get the lib mem base addr
+        # get the lib mem base addr
         mappings = get_maps(self_pid, filter_)
         if len(mappings) == 0:
             raise RuntimeError('impossible to find an executable mapping into the lib')
         base_addr = mappings[0].start_address
-        # step 2: get the sym addr of this process
+        # get the sym addr of this process
         sym      = getattr(lib, sym_name)
         addr     = ctypes.addressof(sym)
         addr     = ctypes.cast(addr, ctypes.POINTER(ctypes.c_ulonglong))
         sym_addr = addr.contents.value
-        # step 3: compute and return the offset
+        # compute and return the offset
         sym_offset = sym_addr - base_addr
-        # step 4: get the lib addr in the target process
+        # get the lib addr in the target process
         mappings = self.get_maps(filter_)
         if len(mappings) == 0:
             raise RuntimeError('impossible to find an executable mapping into the lib')
         lib_addr = mappings[0].start_address
-        # step 5: compute the remote sym addr
+        # compute the remote sym addr
         sym_addr = lib_addr + sym_offset
         return sym_addr
 
     def syscall(self, syscall, *args):
+        '''Makes the process call a syscall.
+
+        Parameters
+        ----------
+        syscall : int
+            The syscall number to call.
+            A list of all the syscall is provided into the `syscalls` module.
+        *args
+            Arguments of the syscall.
+        '''
         with self.get_regs_and_restore() as regs:
             # prepare and set all the registers
             regs.rax = syscall
@@ -358,6 +368,17 @@ class Process:
         return ret
 
     def call(self, fct_addr, *args, stack_frame_addr=None):
+        '''Makes the process call one of its functions.
+
+        Parameters
+        ----------
+        fct_addr : int
+            The address of the function to call.
+        *args
+            Arguments of the function to call.
+        stack_frame_addr : int, optional
+            Set stack frame to this address.
+        '''
         with self.get_regs_and_restore() as regs:
             # prepare and set all the registers
             regs.rax = fct_addr
