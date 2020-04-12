@@ -22,6 +22,8 @@ python setup.py install
 
 # Examples
 
+**TODO: these examples are no longer valid.**
+
 ## Attach/Detach/Continue/Singlestep a process
 
 ```python
