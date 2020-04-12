@@ -1,5 +1,4 @@
 
-from . import libc
-from . import maps
-from . import process
+from .maps    import get_maps
+from .process import Process
 

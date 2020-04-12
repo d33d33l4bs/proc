@@ -8,7 +8,7 @@ import struct
 
 from .libc import ptrace
 from .libc import uio
-from .     import maps
+from .maps import get_maps
 
 
 ##############
@@ -113,7 +113,7 @@ class Process:
         --------
         maps.get_maps
         '''
-        maps_ = maps.get_maps(self._pid, filter_)
+        maps_ = get_maps(self._pid, filter_)
         return maps_
 
     def attach(self):
@@ -322,7 +322,7 @@ class Process:
         lib      = ctypes.CDLL(lib_path)
         filter_  = lambda m: m.pathname == lib_path and 'w' in m.perms
         # step 1: get the lib mem base addr
-        mappings = maps.get_maps(self_pid, filter_)
+        mappings = get_maps(self_pid, filter_)
         if len(mappings) == 0:
             raise RuntimeError('impossible to find an executable mapping into the lib')
         base_addr = mappings[0].start_address
