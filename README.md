@@ -25,7 +25,7 @@ python setup.py install
 ## Attach/Detach/Continue/Singlestep a process
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 
@@ -45,7 +45,7 @@ process.detach()
 ## Read the process registers
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -55,7 +55,7 @@ regs = process.get_regs()
 ## Write the process registers
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -68,7 +68,7 @@ process.set_regs(regs)
 ## Make an auto registers restore
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -81,37 +81,10 @@ with process.get_regs_and_restore() as regs:
 # here the registers are restored with their original values
 ```
 
-## Get all the mappings of a process
-
-Without a `Process` instance:
-
-```python
-from deedee.proc.maps import get_maps
-
-get_maps(1234)
-```
-
-With a `Process` instance:
-
-```python
-from deedee.proc.process import Process
-
-process = Process(pid)
-process.get_maps()
-```
-
-## Get all the writable mappings of a process with a size greater or equal to 4096
-
-```python
-from deedee.proc.maps import get_maps
-
-get_maps(1234, lambda m: 'w' in m.perms and m.size >= 4096)
-```
-
 ## Get a symbol address into another process memory (support ASLR)
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -121,7 +94,7 @@ printf_addr = process.get_sym_addr('/usr/lib64/libc-2.30.so', 'printf')
 ## Make a process call a function
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -132,7 +105,7 @@ process.call(exit_addr, 0)
 ## Make a process call a syscall
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 NR_exit = 60
 
@@ -144,7 +117,7 @@ process.syscall(NR_exit, 0)
 ## Allocate a new mapping into a process
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 NR_MMAP = 9
 
@@ -170,7 +143,7 @@ mapping = target.syscall(NR_MMAP, 0, SIZE, prot, flags, 0, 0)
 **Method #1:**
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -182,7 +155,7 @@ words = process.read_mem_words(0x0011223344556677, n=5)
 **Method #2:**
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -196,7 +169,7 @@ words = process.read_mem_array(0x0011223344556677, n=5)
 **Method #1:**
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 PAYLOAD = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
 
@@ -213,7 +186,7 @@ non writable mapping.
 **Method #2:**
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 process = Process(pid)
 process.attach()
@@ -229,7 +202,7 @@ This method can only write on writable mapping.
 A context manager allow to undo mem modifications:
 
 ```python
-from deedee.proc.process import Process
+from deedee.proc import Process
 
 PAYLOAD = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
 
@@ -244,6 +217,35 @@ with process.write_mem_words_and_restore(0x0011223344556677, PAYLOAD):
 
 A similar context manager is written for `write_mem_array`: `write_mem_array_and_restore`.
 
+## Get all the mappings of a process
+
+With a `Process` instance:
+
+```python
+from deedee.proc import Process
+
+process = Process(pid)
+process.get_maps()
+```
+
+Without a `Process` instance:
+
+```python
+import os
+
+from deedee.proc import get_maps
+
+get_maps(os.getpid())
+```
+
+## Get all the writable mappings of a process with a size greater or equal to 4096
+
+```python
+from deedee.proc import get_maps
+
+process = Process(pid)
+process.get_maps(lambda m: 'w' in m.perms and m.size >= 4096)
+```
 
 # TODO
 
