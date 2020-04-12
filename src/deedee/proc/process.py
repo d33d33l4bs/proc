@@ -1,4 +1,6 @@
 
+import types
+import functools
 import ctypes
 import os
 import signal
@@ -6,9 +8,10 @@ import copy
 import contextlib
 import struct
 
-from .libc import ptrace
-from .libc import uio
-from .maps import get_maps
+from .plugins import Plugin
+from .libc    import ptrace
+from .libc    import uio
+from .maps    import get_maps
 
 
 ##############
@@ -32,27 +35,26 @@ class ProcessVMException(Exception):
 class Process:
     '''Allows to manipulate a process: read/write its memory or registers.
 
-    This class provides an higher abstraction than the ptrace module.
-
-    Attributes
-    ----------
-    SYSCALL : bytes
-        Simple syscall instruction.
-    CALL_INT : bytes
-        It does:
-            call rax
-            int3
-        It allows to call a procedure and SIGTRAP just after.
+    This class provides an higher abstraction than the ptrace module and can be
+    extended by some plugins.
     '''
 
-    SYSCALL_ABI = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
-    CALL_ABI    = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+    def __init__(self, pid, plugins=[]):
+        self._pid     = pid
+        self._plugins = {}
+        for plugin in plugins:
+            self.add_plugin(plugin)
 
-    SYSCALL  = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
-    CALL_INT = b'\xff\xd0\xcc\x00\x00\x00\x00\x00'
+    def add_plugin(self, plugin):
+        self._plugins[plugin.name] = plugin
+        setattr(self, plugin.name, functools.partial(plugin.run, self))
 
-    def __init__(self, pid):
-        self._pid = pid
+    def remove_plugin(self, plugin):
+        delattr(self, plugin.name)
+        del self._plugins[plugin.name]
+
+    def is_plugin_loaded(self, plugin):
+        return plugin.name in self._plugins
 
     def _call_ptrace(self, fct, *args):
         '''Helper method allowing to check if ptrace returned an error.
@@ -296,103 +298,4 @@ class Process:
             yield
         finally:
             self.write_mem_array(addr, backup.raw)
-
-    def get_sym_addr(self, lib_path, sym_name):
-        '''Retrieves the address of a library symbol into the process.
-
-        Parameters
-        ----------
-        lib_path : str
-            The path to the library in which the function is defined.
-        sym_name : str
-            The name of the function whose address is retrieved.
-
-        Returns
-        -------
-        int
-            The function address.
-
-        Raises
-        ------
-        RuntimeError
-            No executable mapping is found into the library.
-        '''
-        # load the lib into the local process
-        self_pid = os.getpid()
-        lib      = ctypes.CDLL(lib_path)
-        filter_  = lambda m: m.pathname == lib_path and 'w' in m.perms
-        # get the lib mem base addr
-        mappings = get_maps(self_pid, filter_)
-        if len(mappings) == 0:
-            raise RuntimeError('impossible to find an executable mapping into the lib')
-        base_addr = mappings[0].start_address
-        # get the sym addr of this process
-        sym      = getattr(lib, sym_name)
-        addr     = ctypes.addressof(sym)
-        addr     = ctypes.cast(addr, ctypes.POINTER(ctypes.c_ulonglong))
-        sym_addr = addr.contents.value
-        # compute and return the offset
-        sym_offset = sym_addr - base_addr
-        # get the lib addr in the target process
-        mappings = self.get_maps(filter_)
-        if len(mappings) == 0:
-            raise RuntimeError('impossible to find an executable mapping into the lib')
-        lib_addr = mappings[0].start_address
-        # compute the remote sym addr
-        sym_addr = lib_addr + sym_offset
-        return sym_addr
-
-    def syscall(self, syscall, *args):
-        '''Makes the process call a syscall.
-
-        Parameters
-        ----------
-        syscall : int
-            The syscall number to call.
-            A list of all the syscall is provided into the `syscalls` module.
-        *args
-            Arguments of the syscall.
-        '''
-        with self.get_regs_and_restore() as regs:
-            # prepare and set all the registers
-            regs.rax = syscall
-            for i, arg in enumerate(args):
-                setattr(regs, self.SYSCALL_ABI[i], arg)
-            self.set_regs(regs)
-            # call the syscal
-            with self.write_mem_words_and_restore(regs.rip, self.SYSCALL):
-                self.step()
-                # get the result
-                self.get_regs(regs)
-                ret = regs.rax
-        return ret
-
-    def call(self, fct_addr, *args, stack_frame_addr=None):
-        '''Makes the process call one of its functions.
-
-        Parameters
-        ----------
-        fct_addr : int
-            The address of the function to call.
-        *args
-            Arguments of the function to call.
-        stack_frame_addr : int, optional
-            Set stack frame to this address.
-        '''
-        with self.get_regs_and_restore() as regs:
-            # prepare and set all the registers
-            regs.rax = fct_addr
-            for i, arg in enumerate(args):
-                setattr(regs, self.CALL_ABI[i], arg)
-            if stack_frame_addr is not None:
-                regs.rsp = stack_frame_addr
-                regs.rbp = regs.rsp
-            self.set_regs(regs)
-            # call the fct
-            with self.write_mem_words_and_restore(regs.rip, self.CALL_INT):
-                self.continue_()
-                # get the result
-                self.get_regs(regs)
-                ret = regs.rax
-        return ret
 
