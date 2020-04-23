@@ -5,4 +5,5 @@ from . import getsym
 from . import call
 from . import syscall
 from . import loadlib
+from . import readmem
 
