@@ -1,4 +1,6 @@
 
+'''Defines some strategies to load a library into another process.'''
+
 from .plugin    import Plugin
 from ..syscalls import SYS_mmap, SYS_munmap
 
