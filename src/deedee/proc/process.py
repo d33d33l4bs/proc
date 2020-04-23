@@ -45,6 +45,10 @@ class Process:
         for plugin in plugins:
             self.add_plugin(plugin)
 
+    @property
+    def pid(self):
+        return self._pid
+
     def add_plugin(self, plugin):
         self._plugins[plugin.name] = plugin
         setattr(self, plugin.name, functools.partial(plugin.run, self))
