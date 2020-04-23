@@ -45,7 +45,7 @@ class libc_dlopen(Plugin):
         return handler
 
 
-class LibdlDlopen(Plugin):
+class libdl_dlopen(Plugin):
 
     name = 'load_library'
 
