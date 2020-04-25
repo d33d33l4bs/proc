@@ -39,26 +39,12 @@ class Process:
     extended by some plugins.
     '''
 
-    def __init__(self, pid, plugins=[]):
-        self._pid     = pid
-        self._plugins = {}
-        for plugin in plugins:
-            self.add_plugin(plugin)
+    def __init__(self, pid):
+        self._pid = pid
 
     @property
     def pid(self):
         return self._pid
-
-    def add_plugin(self, plugin):
-        self._plugins[plugin.name] = plugin
-        setattr(self, plugin.name, functools.partial(plugin.run, self))
-
-    def remove_plugin(self, plugin):
-        delattr(self, plugin.name)
-        del self._plugins[plugin.name]
-
-    def is_plugin_loaded(self, plugin):
-        return plugin.name in self._plugins
 
     def _call_ptrace(self, fct, *args):
         '''Helper method allowing to check if ptrace returned an error.

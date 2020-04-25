@@ -4,20 +4,19 @@
 
 import argparse
 
-from deedee.proc         import Process
-from deedee.proc.plugins import getsym, call, syscall, loadlib, unloadlib
+import deedee.proc         as proc
+import deedee.proc.plugins as plugins
 
 
 def load_library(args):
-    victim = Process(args.pid, [
-        getsym.by_lib_loading(),
-        call.call_int3(),
-        syscall.syscall(),
-        loadlib.libc_dlopen()
-    ])
+    victim  = proc.Process(args.pid)
+    syscall = plugins.syscall.SyscallByInstrReplacement()
+    call    = plugins.call.CallInt3()
+    getsym  = plugins.getsym.ByLibLoading()
+    loadlib = plugins.loadlib.LibcDlopen(syscall, call, getsym)
     victim.attach()
     try:
-        handler = victim.load_library(args.libc, args.lib)
+        handler = loadlib(victim, args.libc, args.lib)
     except Exception as e:
         print(f'An error occured during the injection: {e}.')
     else:
@@ -25,14 +24,13 @@ def load_library(args):
     victim.detach()
 
 def unload_library(args):
-    victim = Process(args.pid, [
-        getsym.by_lib_loading(),
-        call.call_int3(),
-        unloadlib.libc_dlclose()
-    ])
+    victim    = proc.Process(args.pid)
+    call      = plugins.call.CallInt3()
+    getsym    = plugins.getsym.ByLibLoading()
+    unloadlib = plugins.unloadlib.LibcDlclose(call, getsym)
     victim.attach()
     try:
-        victim.unload_library(args.libc, args.handler)
+        unloadlib(victim, args.libc, args.handler)
     except Exception as e:
         print(f'An error occured during the unloading: {e}.')
     else:

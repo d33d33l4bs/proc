@@ -17,41 +17,46 @@ MAP_ANONYMOUS = 0x20
 RTLD_NOW = 0x02
 
 
-class libc_dlopen(Plugin):
+class LibcDlopen(Plugin):
 
-    name = 'load_library'
+    def __init__(self, syscall, call, getsym):
+        self._syscall = syscall
+        self._call    = call
+        self._getsym  = getsym
 
-    def run(self, process, libc_path, lib_path):
+    def __call__(self, process, libc_path, lib_path):
         # allocate a new mapping
         prot    = PROT_WRITE | PROT_READ
         flags   = MAP_ANONYMOUS | MAP_PRIVATE
-        mapping = process.syscall(SYS_mmap, 0, 8192, prot, flags, 0, 0)
+        mapping = self._syscall(process, SYS_mmap, 0, 8192, prot, flags, 0, 0)
         if mapping == 0:
             raise RuntimeError('mmap failed')
+        print('mapping:', hex(mapping))
         # write the path lib into the beginning of the mapping
         path = lib_path.encode() + b'\x00'
         process.write_mem_array(mapping, path)
         # call dlopen
-        dlopen_addr = process.get_sym(libc_path, '__libc_dlopen_mode')
-        handler     = process.call(
+        dlopen_addr = self._getsym(process, libc_path, '__libc_dlopen_mode')
+        print('dlopen addr:', hex(dlopen_addr))
+        handler     = self._call(
+            process,
             dlopen_addr,
             mapping,
             RTLD_NOW,
             stack_frame_addr=mapping+4096
         )
+        print('handler:', hex(handler))
         # deallocate the mapping
-        process.syscall(SYS_munmap, mapping, 8192)
+        self._syscall(process, SYS_munmap, mapping, 8192)
         # return the handler
         if handler == 0:
             raise RuntimeError('dlopen returned NULL (is the path of your lib valid?)')
         return handler
 
 
-class libdl_dlopen(Plugin):
+class LibdlDlopen(Plugin):
 
-    name = 'load_library'
-
-    def run(self, process, libdl_path, lib_path):
-        pass
+    def __call__(self, process, libdl_path, lib_path):
+        raise NotImplemented('this method is not implemented')
 
 

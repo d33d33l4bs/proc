@@ -8,7 +8,7 @@ from .plugin import Plugin
 from ..maps  import get_maps
 
 
-class by_lib_loading(Plugin):
+class ByLibLoading(Plugin):
     '''Get a sym address by loading the library into the host process.
 
     Here is its internal working:
@@ -27,9 +27,7 @@ class by_lib_loading(Plugin):
     are defined into, these one will be executed by the host process.
     '''
 
-    name = 'get_sym'
-
-    def run(self, process, lib_path, sym_name):
+    def __call__(self, process, lib_path, sym_name):
         '''
         Parameters
         ----------
@@ -74,9 +72,9 @@ class by_lib_loading(Plugin):
         return sym_addr
 
 
-class by_elf_parsing(Plugin):
+class ByElfParsing(Plugin):
 
-    def get_sym(self, process, lib_path, sym_name):
+    def __call__(self, process, lib_path, sym_name):
         '''Get a sym address by parsing the library in which the sym is defined.
 
         This strategy parses the output of the `readelf` command.
@@ -91,5 +89,5 @@ class by_elf_parsing(Plugin):
         --------
         This strategy needs the command `readelf` to work.
         '''
-        pass
+        raise NotImplemented('this method is not yet implemented')
 

@@ -4,14 +4,12 @@
 from .plugin import Plugin
 
 
-class call_int3(Plugin):
-
-    name = 'call'
+class CallInt3(Plugin):
 
     CALL_ABI = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
     CALL_INT = b'\xff\xd0\xcc\x00\x00\x00\x00\x00'
 
-    def run(self, process, fct_addr, *args, stack_frame_addr=None):
+    def __call__(self, process, fct_addr, *args, stack_frame_addr=None):
         '''Makes the process call one of its functions.
 
         Parameters

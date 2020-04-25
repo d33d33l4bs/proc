@@ -1,9 +1,10 @@
 
 from setuptools import setup, find_packages
+from pathlib    import Path
 
 setup(
     name        = 'deedee.proc',
-    version     = '0.1',
+    version     = Path(__file__).resolve().parents[0].joinpath('version').read_text(),
     package_dir = {'': 'src'},
     packages    = find_packages(where='src'),
     author      = 'Dee Dee',

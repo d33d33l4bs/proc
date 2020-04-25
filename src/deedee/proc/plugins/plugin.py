@@ -2,8 +2,9 @@
 class Plugin:
     '''Base class for all the plugins.'''
 
-    name : str
+    def __init__(self):
+        pass
 
-    def run(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         pass
 

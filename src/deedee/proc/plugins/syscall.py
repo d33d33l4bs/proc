@@ -4,8 +4,8 @@
 from .plugin import Plugin
 
 
-class syscall(Plugin):
-    '''Replaces the current instruction by a syscall one.
+class SyscallByInstrReplacement(Plugin):
+    '''Replaces the current instruction by a syscall.
 
     This basic plugin works in this way:
 
@@ -16,12 +16,10 @@ class syscall(Plugin):
 
     '''
 
-    name = 'syscall'
-
     SYSCALL_ABI = ['rdi', 'rsi', 'rdx', 'r10', 'r8', 'r9']
     SYSCALL     = b'\x0f\x05\x00\x00\x00\x00\x00\x00'
 
-    def run(self, process, syscall, *args):
+    def __call__(self, process, syscall, *args):
         '''
         Parameters
         ----------

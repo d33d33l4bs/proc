@@ -4,19 +4,27 @@
 from .plugin import Plugin
 
 
-class proc_mem_read(Plugin):
-    '''Allow to read the memory of a process by reading its /proc/mem file.
+class ProcMemRead(Plugin):
+    '''Allows to read the memory of a process by reading its /proc/mem file.
 
     Warnings
     --------
-    It can only be used to read readable mappings!
+    It can only be used to read readable mappings.
     '''
 
-    name = 'read_mem'
+    def __init__(self, auto_refresh=False):
+        self._auto_refresh = auto_refresh
+        self._f            = None
 
-    def run(self, process, offset, size):
-        with open(f'/proc/{process.pid}/mem', 'rb') as f:
-            f.seek(offset)
-            data = f.read(size)
-        return data
+    def refresh(self, process):
+        '''Close and open the proc mem file.'''
+        if self._f is not None:
+            self._f.close()
+        self._f = open(f'/proc/{process.pid}/mem', 'rb')
+
+    def __call__(self, process, offset, size):
+        if self._f is None or self._auto_refresh:
+            self.refresh(process)
+        self._f.seek(offset)
+        return self._f.read(size)
 
