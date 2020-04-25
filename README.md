@@ -1,12 +1,12 @@
 # Introduction
 
-`proc` is a simple library allowing to play with processes: inject data, read memory, etc.
+`proc` is a simple library allowing to play with Linux processes (x86 64): inject data, read memory, etc.
 I made it to serve my own purposes.
 
 
 # Warnings
 
-You can use this one but remember that its primary goal is to store some ugly pieces of code I wrote for my projects.
+You can use this one but remember that its primary goal is to store some ugly pieces of code I wrote for my proof of concepts.
 Therefore don't expect to see a beautiful code or a pretty architecture.
 
 
@@ -21,8 +21,6 @@ python setup.py install
 
 
 # Examples
-
-**TODO: these examples are no longer valid.**
 
 ## Attach/Detach/Continue/Singlestep a process
 
@@ -86,40 +84,36 @@ with process.get_regs_and_restore() as regs:
 ## Get a symbol address into another process memory (support ASLR)
 
 ```python
-from deedee.proc import Process
+from deedee.proc         import Process
+from deedee.proc.plugins import getsym
 
 process = Process(pid)
+getsym  = getsym.ByLibLoading()
+
 process.attach()
-printf_addr = process.get_sym_addr('/usr/lib64/libc-2.30.so', 'printf')
+printf_addr = getsym(process, '/usr/lib64/libc-2.30.so', 'printf')
 ```
 
 ## Make a process call a function
 
 ```python
-from deedee.proc import Process
+from deedee.proc         import Process
+from deedee.proc.plugins import getsym, call
 
 process = Process(pid)
+getsym  = getsym.ByLibLoading()
+call    = call.CallInt3()
+
 process.attach()
-exit_addr = process.get_sym_addr('/usr/lib64/libc-2.30.so', 'exit')
-process.call(exit_addr, 0)
+exit_addr = process.getsym(process, '/usr/lib64/libc-2.30.so', 'exit')
+call(process, exit_addr, 0)
 ```
 
 ## Make a process call a syscall
 
 ```python
-from deedee.proc import Process
-
-NR_exit = 60
-
-process = Process(pid)
-process.attach()
-process.syscall(NR_exit, 0)
-```
-
-## Allocate a new mapping into a process
-
-```python
-from deedee.proc import Process
+from deedee.proc         import Process
+from deedee.proc.plugins import syscall
 
 NR_MMAP = 9
 
@@ -133,11 +127,13 @@ MAP_ANONYMOUS = 0x20
 SIZE = 1024
 
 process = Process(pid)
+syscall = syscall.SyscallByInstrReplacement()
+
 process.attach()
 
 prot    = PROT_WRITE | PROT_READ
 flags   = MAP_ANONYMOUS | MAP_PRIVATE
-mapping = target.syscall(NR_MMAP, 0, SIZE, prot, flags, 0, 0)
+mapping = syscall(process, NR_MMAP, 0, SIZE, prot, flags, 0, 0)
 ```
 
 ## Read data from the memory of a process
@@ -154,6 +150,8 @@ process.attach()
 words = process.read_mem_words(0x0011223344556677, n=5)
 ```
 
+This method can read non readable mappings.
+
 **Method #2:**
 
 ```python
@@ -165,6 +163,8 @@ process.attach()
 # read 5 bytes from 0x0011223344556677
 words = process.read_mem_array(0x0011223344556677, n=5)
 ```
+
+This method can not read non readable mappings.
 
 ## Write into the memory of a process
 
@@ -248,11 +248,4 @@ from deedee.proc import get_maps
 process = Process(pid)
 process.get_maps(lambda m: 'w' in m.perms and m.size >= 4096)
 ```
-
-# TODO
-
-* Make the `process.call` higher level. For the moment, the method take a function address.
-This one could take the name or the address of the function.
-* Make the `process.syscall` and `process.call` higher level. If one of the paramater is a string or a struct, these methods could allocate a new mapping and write them inside.
-For example: `process.call(printf_addr, 'Hello "%s"', 'Kami the evil guy')`.
 
