@@ -31,13 +31,11 @@ class LibcDlopen(Plugin):
         mapping = self._syscall(process, SYS_mmap, 0, 8192, prot, flags, 0, 0)
         if mapping == 0:
             raise RuntimeError('mmap failed')
-        print('mapping:', hex(mapping))
         # write the path lib into the beginning of the mapping
         path = lib_path.encode() + b'\x00'
         process.write_mem_array(mapping, path)
         # call dlopen
         dlopen_addr = self._getsym(process, libc_path, '__libc_dlopen_mode')
-        print('dlopen addr:', hex(dlopen_addr))
         handler     = self._call(
             process,
             dlopen_addr,
@@ -45,7 +43,6 @@ class LibcDlopen(Plugin):
             RTLD_NOW,
             stack_frame_addr=mapping+4096
         )
-        print('handler:', hex(handler))
         # deallocate the mapping
         self._syscall(process, SYS_munmap, mapping, 8192)
         # return the handler
