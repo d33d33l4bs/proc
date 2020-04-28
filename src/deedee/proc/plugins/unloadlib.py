@@ -1,6 +1,5 @@
 
-from .plugin    import Plugin
-from ..syscalls import SYS_mmap, SYS_munmap
+from .plugin import Plugin
 
 
 class LibcDlclose(Plugin):

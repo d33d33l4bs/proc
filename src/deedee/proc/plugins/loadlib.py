@@ -1,8 +1,8 @@
 
 '''Defines some strategies to load a library into another process.'''
 
-from .plugin    import Plugin
-from ..syscalls import SYS_mmap, SYS_munmap
+from .plugin  import Plugin
+from .syscall import Syscalls
 
 
 # mmap prot constants
@@ -28,7 +28,7 @@ class LibcDlopen(Plugin):
         # allocate a new mapping
         prot    = PROT_WRITE | PROT_READ
         flags   = MAP_ANONYMOUS | MAP_PRIVATE
-        mapping = self._syscall(process, SYS_mmap, 0, 8192, prot, flags, 0, 0)
+        mapping = self._syscall(process, Syscalls.mmap, 0, 8192, prot, flags, 0, 0)
         if mapping == 0:
             raise RuntimeError('mmap failed')
         # write the path lib into the beginning of the mapping
@@ -44,7 +44,7 @@ class LibcDlopen(Plugin):
             stack_frame_addr=mapping+4096
         )
         # deallocate the mapping
-        self._syscall(process, SYS_munmap, mapping, 8192)
+        self._syscall(process, Syscalls.munmap, mapping, 8192)
         # return the handler
         if handler == 0:
             raise RuntimeError('dlopen returned NULL (is the path of your lib valid?)')
